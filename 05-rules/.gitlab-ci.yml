@@ -1,0 +1,24 @@
+---
+include:
+  - local: .gitlab-ci/default.yml
+  - local: .gitlab-ci/workflow.yml
+  - local: .gitlab-ci/rules.yml
+  - local: .gitlab-ci/prepare.yml
+  - local: .gitlab-ci/linter.yml
+  - local: .gitlab-ci/test.yml
+  - local: .gitlab-ci/push.yml
+  - local: .gitlab-ci/deploy.yml
+
+stages:
+  - prepare
+  - linter
+  - build
+  - test
+  - push
+  - deploy
+
+build:
+  stage: build
+  script:
+    - docker build -t $CI_REGISTRY/$CI_PROJECT_NAMESPACE/$CI_PROJECT_NAME:$CI_COMMIT_REF_SLUG.$CI_PIPELINE_ID .
+...

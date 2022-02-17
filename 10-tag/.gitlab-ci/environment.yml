@@ -1,0 +1,18 @@
+---
+.environment_start:
+  environment:
+    name: ${CI_PROJECT_NAME}/${CI_COMMIT_REF_SLUG}
+    url: https://${CI_ENVIRONMENT_SLUG}.$REVIEW_DOMAIN
+    on_stop: environment:stop
+    auto_stop_in: 1 week
+
+.environment_prepare:
+  environment:
+    name: ${CI_PROJECT_NAME}/${CI_COMMIT_REF_SLUG}
+    action: prepare
+
+.environment_stop:
+  environment:
+    name: ${CI_PROJECT_NAME}/${CI_COMMIT_REF_SLUG}
+    action: stop
+...

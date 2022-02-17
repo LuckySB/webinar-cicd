@@ -1,0 +1,35 @@
+---
+hadolint:dockerfiles:
+  allow_failure: true
+  before_script:
+    - export LC_ALL=en_US.utf8
+  image:
+    name: hadolint/hadolint:v2.6.0-alpine
+  interruptible: true
+  script:
+    - find . -maxdepth 1 -type f -name Dockerfile -print -exec hadolint '{}' +
+    - if test -d docker; then find docker -type f -name Dockerfile -print -exec hadolint '{}' +; fi
+  stage: linter
+
+helm:lint:
+  image:
+    name: $SERVICE_IMAGE
+  interruptible: true
+  script:
+    - helm lint .helm
+        -f .helm/values.yaml
+        --set image="$CI_REGISTRY/$CI_PROJECT_NAMESPACE/$CI_PROJECT_NAME"
+        --set imageTag="0.0.1"
+  stage: linter
+
+helm:template:
+  image:
+    name: $SERVICE_IMAGE
+  interruptible: true
+  script:
+    - helm template "$CI_PROJECT_NAME" .helm
+        -f .helm/values.yaml
+        --set image="$CI_REGISTRY/$CI_PROJECT_NAMESPACE/$CI_PROJECT_NAME"
+        --set imageTag="0.0.1"
+  stage: linter
+...

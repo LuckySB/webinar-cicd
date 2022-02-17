@@ -1,0 +1,31 @@
+---
+test:
+  stage: test
+  image:
+    name: docker/compose:1.27.4
+    entrypoint: [""]
+  extends:
+    - .rules_main_tag_mr
+  before_script:
+    - export MY_TEST="My test is great!"
+    - |
+      echo "MY_TEST: '$MY_TEST'"
+  script:
+    - |
+      echo "MY_TEST: '$MY_TEST'"
+    - docker-compose
+        -p "$CI_PROJECT_NAME"_"$CI_PIPELINE_ID"
+      up
+        --abort-on-container-exit
+        --exit-code-from app
+        --quiet-pull
+    - |
+      if [ "$FORCE_FAIL_TEST" == true ]; then
+        echo "Test is force failed. Exit 1"
+        exit 1
+      fi
+  after_script:
+    - |
+      echo "MY_TEST: '$MY_TEST'"
+    - docker-compose -p "$CI_PROJECT_NAME"_"$CI_PIPELINE_ID" down
+...

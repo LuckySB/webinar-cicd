@@ -1,0 +1,59 @@
+---
+.rules_only_main_branch:
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+      when: on_success
+    - when: never
+
+.rules_only_tag:
+  rules:
+    - if: $CI_COMMIT_TAG
+      when: on_success
+    - when: never
+
+.rules_only_mr:
+  rules:
+    - if: $CI_MERGE_REQUEST_ID
+      when: on_success
+    - when: never
+
+.rules_only_mr_manual:
+  rules:
+    - if: $CI_MERGE_REQUEST_ID
+      when: manual
+    - when: never
+
+.rules_only_mr_draft:
+  rules:
+    - if: $CI_MERGE_REQUEST_ID && $CI_MERGE_REQUEST_TITLE =~ /^(Draft|WIP):/
+      when: on_success
+    - when: never
+
+.rules_main_tag_mr:
+  rules:
+    - if: $CI_COMMIT_TAG
+      variables:
+        MESSAGE_FROM_CI: "This is git tag"
+      when: on_success
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+      variables:
+        MESSAGE_FROM_CI: "This is main branch"
+      when: on_success
+    - if: $CI_MERGE_REQUEST_ID
+      variables:
+        MESSAGE_FROM_CI: "This is MR"
+      when: on_success
+    - when: never
+
+.rules_deploy_dev:
+  rules:
+    - if: $CI_MERGE_REQUEST_ID && $CI_MERGE_REQUEST_TITLE =~ /^(Draft|WIP):/
+      variables:
+        MESSAGE_FROM_CI: "This is MR and Draft"
+      when: manual
+    - if: $CI_MERGE_REQUEST_ID && $CI_MERGE_REQUEST_TITLE !~ /^(Draft|WIP):/
+      variables:
+        MESSAGE_FROM_CI: "This is MR and not Draft"
+      when: on_success
+    - when: never
+...

@@ -1,0 +1,64 @@
+---
+environment:start:
+  stage: prepare
+  extends:
+    - .rules_only_mr
+    - .environment_start
+  script:
+    - echo "Environment start"
+
+environment:stop:
+  allow_failure: true
+  stage: prepare
+  extends:
+    - .rules_only_mr_manual
+    - .environment_stop
+  image: $SERVICE_IMAGE
+  script:
+    - echo "Environment stop"
+    - kubectl config set-cluster k8s --insecure-skip-tls-verify=true --server="$K8S_API_URL"
+    - kubectl config set-credentials ci --token="$K8S_CI_TOKEN"
+    - kubectl config set-context ci --cluster=k8s --user=ci
+    - kubectl config use-context ci
+    - if kubectl get namespace "$CI_ENVIRONMENT_SLUG"; then kubectl delete namespace "$CI_ENVIRONMENT_SLUG"; else true; fi
+
+create_stand:
+  stage: create_stand
+  needs:
+    - job: helm:lint
+      optional: true
+  extends:
+    - .rules_only_mr
+    - .environment_prepare
+  image: $SERVICE_IMAGE
+  script:
+    - |
+      echo "CI_ENVIRONMENT_SLUG: $CI_ENVIRONMENT_SLUG"
+    - kubectl config set-cluster k8s --insecure-skip-tls-verify=true --server="$K8S_API_URL"
+    - kubectl config set-credentials ci --token="$K8S_CI_TOKEN"
+    - kubectl config set-context ci --cluster=k8s --user=ci
+    - kubectl config use-context ci
+    - kubectl create ns $CI_ENVIRONMENT_SLUG --dry-run=client -o yaml | kubectl apply -f -
+    - kubectl create secret docker-registry xpaste-gitlab-registry
+        --docker-server registry.slurm.io
+        --docker-email 'student@slurm.io'
+        --docker-username "$IMAGE_PULL_USER"
+        --docker-password "$IMAGE_PULL_PASSWORD"
+        --namespace "$CI_ENVIRONMENT_SLUG"
+        --dry-run=client -o yaml | kubectl apply -f -
+    - kubectl create secret generic slurm-xpaste
+        --from-literal secret-key-base=xxxxxxxxxxxxxxxxxxxxxxxxx
+        --from-literal db-user=postgres
+        --from-literal db-password=postgres
+        --namespace "$CI_ENVIRONMENT_SLUG"
+        --dry-run=client -o yaml | kubectl apply -f -
+    - helm repo add bitnami https://charts.bitnami.com/bitnami
+    - helm upgrade -i postgresql-dev bitnami/postgresql
+        --version 10.4.9
+        --set postgresqlPassword=postgres
+        --set postgresqlDatabase=xpaste
+        --set image.debug=true
+        --namespace "$CI_ENVIRONMENT_SLUG"
+        --atomic
+        --timeout 180s
+...

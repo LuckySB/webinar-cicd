@@ -1,0 +1,12 @@
+---
+build:
+  stage: build
+  extends:
+    - .rules_main_tag_mr
+  script:
+    - |
+      echo "MESSAGE_FROM_CI: $MESSAGE_FROM_CI"
+    - docker login -u gitlab-ci-token -p $CI_BUILD_TOKEN $CI_REGISTRY
+    - docker build -t $CI_REGISTRY/$CI_PROJECT_NAMESPACE/$CI_PROJECT_NAME:$CI_COMMIT_REF_SLUG.$CI_PIPELINE_ID .
+    - docker push $CI_REGISTRY/$CI_PROJECT_NAMESPACE/$CI_PROJECT_NAME:$CI_COMMIT_REF_SLUG.$CI_PIPELINE_ID
+...

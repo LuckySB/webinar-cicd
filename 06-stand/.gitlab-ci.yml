@@ -1,0 +1,18 @@
+---
+include:
+  - local: .gitlab-ci/default.yml
+  - local: .gitlab-ci/workflow.yml
+  - local: .gitlab-ci/rules.yml
+  - local: .gitlab-ci/prepare.yml
+  - local: .gitlab-ci/linter.yml
+  - local: .gitlab-ci/build.yml
+  - local: .gitlab-ci/test.yml
+  - local: .gitlab-ci/deploy.yml
+
+stages:
+  - prepare
+  - linter
+  - build
+  - test
+  - deploy
+...

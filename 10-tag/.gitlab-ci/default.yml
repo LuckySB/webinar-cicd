@@ -1,0 +1,9 @@
+---
+default:
+  tags:
+    - docker-executor
+
+variables:
+  SERVICE_IMAGE: centosadmin/kubernetes-helm:3.6.3
+  REVIEW_DOMAIN: k8s.slurm.io
+...

@@ -1,0 +1,38 @@
+---
+create_stand:
+  stage: create_stand
+  needs:
+    - job: helm:lint
+      optional: true
+  extends:
+    - .rules_only_mr
+  image: $SERVICE_IMAGE
+  script:
+    - kubectl config set-cluster k8s --insecure-skip-tls-verify=true --server=$K8S_API_URL
+    - kubectl config set-credentials ci --token=$K8S_CI_TOKEN
+    - kubectl config set-context ci --cluster=k8s --user=ci
+    - kubectl config use-context ci
+    - kubectl create ns $CI_COMMIT_REF_SLUG --dry-run=client -o yaml | kubectl apply -f -
+    - kubectl create secret docker-registry xpaste-gitlab-registry
+        --docker-server registry.slurm.io
+        --docker-email 'student@slurm.io'
+        --docker-username "$IMAGE_PULL_USER"
+        --docker-password "$IMAGE_PULL_PASSWORD"
+        --namespace $CI_COMMIT_REF_SLUG
+        --dry-run=client -o yaml | kubectl apply -f -
+    - kubectl create secret generic slurm-xpaste
+        --from-literal secret-key-base=xxxxxxxxxxxxxxxxxxxxxxxxx
+        --from-literal db-user=postgres
+        --from-literal db-password=postgres
+        --namespace $CI_COMMIT_REF_SLUG
+        --dry-run=client -o yaml | kubectl apply -f -
+    - helm repo add bitnami https://charts.bitnami.com/bitnami
+    - helm upgrade -i postgresql-dev bitnami/postgresql
+        --version 10.4.9
+        --set postgresqlPassword=postgres
+        --set postgresqlDatabase=xpaste
+        --set image.debug=true
+        --namespace $CI_COMMIT_REF_SLUG
+        --atomic
+        --timeout 180s
+...

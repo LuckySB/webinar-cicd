@@ -1,0 +1,8 @@
+---
+default:
+  tags:
+    - docker-executor
+
+variables:
+  SERVICE_IMAGE: centosadmin/kubernetes-helm:3.6.3
+...

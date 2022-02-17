@@ -1,0 +1,42 @@
+---
+deploy:production:
+  stage: deploy
+  extends:
+    - .kubectl_config
+    - .rules_main_tag
+  resource_group: deploy_prod
+  image: $SERVICE_IMAGE
+  script:
+    - |
+      echo "IMAGE_TAG: $IMAGE_TAG"
+    - helm upgrade --install xpaste .helm
+        -f .helm/values.yaml
+        -f .helm/values.prod.yaml
+        --set image="$CI_REGISTRY/$CI_PROJECT_NAMESPACE/$CI_PROJECT_NAME"
+        --set imageTag="$IMAGE_TAG"
+        --debug
+        --namespace g000005-xpaste
+        --atomic
+        --timeout 180s
+
+deploy:dev:
+  stage: deploy
+  extends:
+    - .rules_deploy_dev
+    - .kubectl_config
+    - .environment_prepare
+  image: $SERVICE_IMAGE
+  script:
+    - |
+      echo "IMAGE_TAG: $IMAGE_TAG"
+    - helm upgrade --install xpaste .helm
+        -f .helm/values.yaml
+        -f .helm/values.dev.yaml
+        --set image="$CI_REGISTRY/$CI_PROJECT_NAMESPACE/$CI_PROJECT_NAME"
+        --set imageTag="$IMAGE_TAG"
+        --set ingress.host="${CI_ENVIRONMENT_SLUG}.${REVIEW_DOMAIN}"
+        --debug
+        --namespace "$CI_ENVIRONMENT_SLUG"
+        --atomic
+        --timeout 180s
+...

@@ -1,0 +1,19 @@
+---
+build:
+  stage: build
+  extends:
+    - .rules_main_tag_mr
+  script:
+    - |
+      echo "MESSAGE_FROM_CI: $MESSAGE_FROM_CI"
+    - IMAGE_TAG="${CI_COMMIT_TAG:-${CI_COMMIT_REF_SLUG}.${CI_PIPELINE_ID}}"
+    - |
+      echo "IMAGE_TAG: $IMAGE_TAG"
+    - docker login -u gitlab-ci-token -p "$CI_BUILD_TOKEN" "$CI_REGISTRY"
+    - docker build -t "$CI_REGISTRY/$CI_PROJECT_NAMESPACE/$CI_PROJECT_NAME:$IMAGE_TAG" .
+    - docker push "$CI_REGISTRY/$CI_PROJECT_NAMESPACE/$CI_PROJECT_NAME:$IMAGE_TAG"
+    - echo "IMAGE_TAG=$IMAGE_TAG" > imagetagvars.env
+  artifacts:
+    reports:
+      dotenv: imagetagvars.env
+...

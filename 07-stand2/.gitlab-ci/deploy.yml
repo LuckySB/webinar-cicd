@@ -1,0 +1,42 @@
+---
+deploy:production:
+  stage: deploy
+  extends:
+    - .rules_only_main_branch
+  image: $SERVICE_IMAGE
+  script:
+    - kubectl config set-cluster k8s --insecure-skip-tls-verify=true --server=$K8S_API_URL
+    - kubectl config set-credentials ci --token=$K8S_CI_TOKEN
+    - kubectl config set-context ci --cluster=k8s --user=ci
+    - kubectl config use-context ci
+    - helm upgrade --install xpaste .helm
+        -f .helm/values.yaml
+        -f .helm/values.prod.yaml
+        --set image=$CI_REGISTRY/$CI_PROJECT_NAMESPACE/$CI_PROJECT_NAME
+        --set imageTag=$CI_COMMIT_REF_SLUG.$CI_PIPELINE_ID
+        --debug
+        --namespace g000005-xpaste
+        --atomic
+        --timeout 180s
+
+deploy:dev:
+  stage: deploy
+  extends:
+    - .rules_deploy_dev
+  image: $SERVICE_IMAGE
+  script:
+    - kubectl config set-cluster k8s --insecure-skip-tls-verify=true --server=$K8S_API_URL
+    - kubectl config set-credentials ci --token=$K8S_CI_TOKEN
+    - kubectl config set-context ci --cluster=k8s --user=ci
+    - kubectl config use-context ci
+    - helm upgrade --install xpaste .helm
+        -f .helm/values.yaml
+        -f .helm/values.dev.yaml
+        --set image=$CI_REGISTRY/$CI_PROJECT_NAMESPACE/$CI_PROJECT_NAME
+        --set imageTag=$CI_COMMIT_REF_SLUG.$CI_PIPELINE_ID
+        --set ingress.host="xpaste.${CI_COMMIT_REF_SLUG}.k8s.slurm.io"
+        --debug
+        --namespace $CI_COMMIT_REF_SLUG
+        --atomic
+        --timeout 180s
+...

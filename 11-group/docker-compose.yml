@@ -1,0 +1,29 @@
+version: '2.1'
+services:
+  db:
+    image: postgres:9.6
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: xpaste_test
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 1s
+      timeout: 1s
+      retries: 60
+    logging:
+      driver: none
+
+  app:
+    image: ${CI_REGISTRY}/${CI_PROJECT_NAMESPACE}/${CI_PROJECT_NAME}:${IMAGE_TAG}
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_NAME: xpaste_test
+      RAILS_ENV: test
+      RAILS_LOG_TO_STDOUT: 1
+    command: /bin/sh -c 'bundle exec rake db:migrate && bundle exec rspec spec'
+    depends_on:
+      db:
+        condition: service_healthy
